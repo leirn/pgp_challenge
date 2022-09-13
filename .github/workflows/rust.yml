@@ -28,4 +28,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Format
-      run: cargo fmt  --manifest-path rust/Cargo.toml  --all -- --check
+      run: cargo fmt --all -- --check
