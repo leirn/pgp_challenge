@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-pgp = "0.8.0"
+sequoia-openpgp = "1"
