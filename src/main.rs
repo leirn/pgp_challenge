@@ -1,8 +1,11 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
+mod decryptor;
+
 #[get("/")]
 async fn hello() -> impl Responder {
-    HttpResponse::Ok().body(r###"<doctype html>
+    HttpResponse::Ok().body(
+        r###"<doctype html>
 <head>
 </head>
 <body>
@@ -12,7 +15,8 @@ async fn hello() -> impl Responder {
     <inpyt type="submit">
   </form>
 </body>
-"###)
+"###,
+    )
 }
 
 #[post("/challenge")]
@@ -22,12 +26,8 @@ async fn echo(req_body: String) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-            .service(echo)
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
+    HttpServer::new(|| App::new().service(hello).service(echo))
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
 }
