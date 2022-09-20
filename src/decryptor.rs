@@ -15,18 +15,19 @@ use sequoia_openpgp as openpgp;
 pub fn decrypt(message: &str, passphrase: &str) -> Result<String> {
     // Load the certificate
     let ppr = packet::PacketParser::from_bytes(keys.PRIVATE_KEY)?;
-    for cert in cert::CertParser::from(ppr) {
-        match cert {
+    for certo in cert::CertParser::from(ppr) {
+        let mut cert = match certo {
             Ok(cert) => {
                 println!("Key: {}", cert.fingerprint());
                 for ua in cert.userids() {
                     println!("  User ID: {}", ua.userid());
                 }
+                cert
             }
             Err(err) => {
                 eprintln!("Error reading keyring: {}", err);
             }
-        }
+        };
     }
 
     let key = cert.primary_key().key().parts_as_secret()?;
