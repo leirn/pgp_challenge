@@ -1,6 +1,7 @@
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
 mod decryptor;
+mod keys;
 
 #[get("/")]
 async fn hello() -> impl Responder {

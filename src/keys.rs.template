@@ -1,0 +1,7 @@
+const PRIVATE_KEY: &str = r###"-----BEGIN PGP PRIVATE KEY BLOCK-----
+blablabla
+-----END PGP PRIVATE KEY BLOCK-----"###;
+
+const PUBLIC_KEY: &str = r###"-----BEGIN PGP PUBLIC KEY BLOCK-----
+blablabla
+-----END PGP PUBLIC KEY BLOCK-----"###;
