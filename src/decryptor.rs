@@ -43,12 +43,12 @@ impl DecryptionHelper for Helper {
     }
 }
 
-pub fn decrypt(message: &str, passphrase: &str) -> &str {
+pub fn decrypt(message: &str, passphrase: &str) -> Result<&str> {
     let p = &StandardPolicy::new();
     let h = Helper {};
     let mut v = DecryptorBuilder::from_bytes(&message[..])?.with_policy(p, None, h)?;
 
     let mut content = Vec::new();
     v.read_to_end(&mut content)?;
-    content
+    Ok(content)
 }
