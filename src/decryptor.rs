@@ -3,17 +3,15 @@
 // https://docs.rs/sequoia-openpgp/0.21.0/sequoia_openpgp/parse/stream/struct.Decryptor.html
 
 use crate::keys;
-use openpgp::crypto::KeyPair;
-use openpgp::parse::{stream::*, PacketParser, Parse};
-use openpgp::types::SymmetricAlgorithm;
-use openpgp::{
-    packet::{Key, PKESK, SKESK},
-    Cert, KeyID, Result,
-};
+//use openpgp::crypto::KeyPair;
+use openpgp::parse::Parse;
+use openpgp::Result;
 use sequoia_openpgp as openpgp;
 use sequoia_openpgp::cert::CertParser;
+use sequoia_openpgp::crypto::mpi::Ciphertext;
+use sequoia_openpgp::crypto::Decryptor;
 use sequoia_openpgp::crypto::Password;
-use sequoia_openpgp::Message;
+use sequoia_openpgp::types::PublicKeyAlgorithm;
 
 pub fn decrypt(message: String, passphrase: Password) -> Result<String> {
     println!("Decryption method");
@@ -28,22 +26,20 @@ pub fn decrypt(message: String, passphrase: Password) -> Result<String> {
         .next()
         .unwrap()
         .unwrap();
-    private_cert.merge_public(public_cert);
-    println!("Cert loaded");
-    for ua in private_cert.userids() {
-        println!("  {}", String::from_utf8_lossy(ua.value()));
-    }
+    //private_cert.merge_public(public_cert);
+    //println!("Cert loaded");
+    //for ua in private_cert.merge_public(public_cert).userids() {
+    //    println!("  {}", String::from_utf8_lossy(ua.value()));
+    //}
 
     let key = private_cert.primary_key().key().parts_as_secret()?;
     // Extract the keys using passphrase
     let mut keypair = key.clone().decrypt_secret(&passphrase)?.into_keypair()?;
 
     // Load the message as CipherText
-    let msg = Ciphertext::from_bytes(message.as_bytes()).unwrap();
-    let decrypted = keypair.decrypt(msg);
+    let msg = Ciphertext::parse(PublicKeyAlgorithm::Unknown(0), message.as_bytes()).unwrap();
+    let decrypted = keypair.decrypt(&msg, None).unwrap();
+    println!("{}", decrypted.is_ascii());
 
-    //let decrypted = keypair.decrypt(msg);
-    //println!("{}", decrypted);
-    //Ok(format!("{}", decrypted))
-    Ok(String::from(decrypted))
+    Ok(String::from("none"))
 }
