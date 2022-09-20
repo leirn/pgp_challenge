@@ -2,7 +2,8 @@
 
 // https://docs.rs/sequoia-openpgp/0.21.0/sequoia_openpgp/parse/stream/struct.Decryptor.html
 
-use openpgp::crypto::SessionKey;
+use keys;
+use openpgp::crypto::{KeyPair, SessionKey};
 use openpgp::parse::{stream::*, Parse};
 use openpgp::types::SymmetricAlgorithm;
 use openpgp::{
@@ -10,45 +11,32 @@ use openpgp::{
     Cert, KeyID, Result,
 };
 use sequoia_openpgp as openpgp;
-use sequoia_openpgp::policy::StandardPolicy;
-use std::io::Read;
 
-// This fetches keys and computes the validity of the verification.
-struct Helper {}
-
-impl VerificationHelper for Helper {
-    fn get_certs(&mut self, _ids: &[openpgp::KeyHandle]) -> Result<Vec<Cert>> {
-        Ok(Vec::new()) // Feed the Certs to the verifier here...
+pub fn decrypt(message: &str, passphrase: &str) -> Result<String> {
+    // Load the certificate
+    let ppr = packet::PacketParser::from_bytes(keys.PRIVATE_KEY)?;
+    for cert in cert::CertParser::from(ppr) {
+        match cert {
+            Ok(cert) => {
+                println!("Key: {}", cert.fingerprint());
+                for ua in cert.userids() {
+                    println!("  User ID: {}", ua.userid());
+                }
+            }
+            Err(err) => {
+                eprintln!("Error reading keyring: {}", err);
+            }
+        }
     }
-    fn check(&mut self, structure: MessageStructure) -> Result<()> {
-        Ok(()) // Implement your verification policy here.
-    }
-}
 
-impl DecryptionHelper for Helper {
-    fn decrypt<D>(
-        &mut self,
-        _: &[PKESK],
-        skesks: &[SKESK],
-        _sym_algo: Option<SymmetricAlgorithm>,
-        mut decrypt: D,
-    ) -> Result<Option<openpgp::Fingerprint>>
-    where
-        D: FnMut(SymmetricAlgorithm, &SessionKey) -> bool,
-    {
-        skesks[0]
-            .decrypt(&"streng geheim".into())
-            .map(|(algo, session_key)| decrypt(algo, &session_key));
-        Ok(None)
-    }
-}
+    let key = cert.primary_key().key().parts_as_secret()?;
+    // Extract the keys using passphrase
+    let mut keypair = key.clone().decrypt_secret(passphrase)?.into_keypair()?;
 
-pub fn decrypt(message: &str, passphrase: &str) -> Result<&str> {
-    let p = &StandardPolicy::new();
-    let h = Helper {};
-    let mut v = DecryptorBuilder::from_bytes(&message[..])?.with_policy(p, None, h)?;
+    // Load the message as CipherText
+    let msg = Ciphertext::parse(message);
 
-    let mut content = Vec::new();
-    v.read_to_end(&mut content)?;
-    Ok(content)
+    let decrypted = keypair.decrypt(msg);
+    println!(decrypted);
+    Ok(format!("{}", decrypted))
 }
