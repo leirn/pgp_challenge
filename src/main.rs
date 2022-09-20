@@ -1,4 +1,7 @@
+use crate::decryptor::decrypt;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use sequoia_openpgp::crypto::Password;
+use serde::Deserialize;
 
 mod decryptor;
 mod keys;
@@ -6,7 +9,7 @@ mod keys;
 #[get("/")]
 async fn hello() -> impl Responder {
     HttpResponse::Ok().body(
-        r###"<doctype html>
+        r###"<!doctype html>
 <head>
 </head>
 <body>
@@ -27,8 +30,10 @@ struct FormData {
 }
 
 #[post("/")]
-async fn echo(form: web::Form<FormData>) -> impl Responder {
-    match decrypt(form.challenge, form.passphrase) {
+async fn echo(mut form: web::Form<FormData>) -> impl Responder {
+    let encrypted_password = Password::from(form.passphrase.clone());
+    form.passphrase.clear();
+    match decrypt(form.challenge.clone(), encrypted_password) {
         Ok(i) => HttpResponse::Ok().body(i),
         Err(..) => HttpResponse::Ok().body("Cannot decrypt message"),
     }
